@@ -12,14 +12,9 @@ defmodule Day4 do
   end
 
   defp solve(map, match_fun) do
-    keys = Map.keys(map)
-    x_max = Enum.map(keys, &elem(&1, 0)) |> Enum.max()
-    y_max = Enum.map(keys, &elem(&1, 1)) |> Enum.max()
-
-    for x <- 0..x_max, y <- 0..y_max do
-      match_fun.(map, x, y)
-    end
-    |> Enum.sum()
+    map
+    |> Map.keys()
+    |> Enum.reduce(0, fn {x, y}, acc -> acc + match_fun.(map, x, y) end)
   end
 
   defp words_at(map, x, y) do
