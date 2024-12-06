@@ -8,15 +8,18 @@ defmodule Mix.Tasks.Aoc2024.Solve do
     input = InputReader.read(day, use_sample_input)
     module = "Elixir.Day#{day}" |> String.to_existing_atom()
 
-    p1 = apply(module, :first, [input])
-    p2 = apply(module, :second, [input])
+    {t1, p1} = :timer.tc(module, :first, [input])
+    {t2, p2} = :timer.tc(module, :second, [input])
+
+    e1 = t1 / 1_000_000
+    e2 = t2 / 1_000_000
 
     IO.puts("""
     ----------------------------------------
-    First:
+    First (#{e1}s):
     #{p1}
 
-    Second:
+    Second (#{e2}s):
     #{p2}
     """)
   end

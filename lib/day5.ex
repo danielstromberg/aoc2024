@@ -20,10 +20,10 @@ defmodule Day5 do
 
   defp valid_update?([], _rules), do: true
   defp valid_update?([h | t], rules) do
-    Enum.all?(t, &rules[{h, &1}] != nil) and valid_update?(t, rules)
+    Enum.all?(t, &MapSet.member?(rules, {h, &1})) and valid_update?(t, rules)
   end
 
-  defp fix_order(list, rules), do: Enum.sort(list, &rules[{&1, &2}] != nil)
+  defp fix_order(list, rules), do: Enum.sort(list, &MapSet.member?(rules, {&1, &2}))
 
   defp middle_number(list) do
     list
@@ -37,12 +37,10 @@ defmodule Day5 do
 
     rules =
       s1
-      |> String.replace("|", " ")
-      |> String.split()
+      |> String.split(["|", "\n"])
       |> Enum.map(&String.to_integer/1)
       |> Enum.chunk_every(2)
-      |> Enum.map(fn [a, b] -> %{{a, b} => true} end)
-      |> Enum.reduce(%{}, &Map.merge/2)
+      |> Enum.into(MapSet.new(), fn [a, b] -> {a, b} end)
 
     updates =
       s2
