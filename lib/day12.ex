@@ -1,99 +1,62 @@
 defmodule Day12 do
+  def first(input), do: solve(input, &perimeter/2)
+  def second(input), do: solve(input, &edges/2)
 
-  def first(input) do
+  defp solve(input, fun) do
     input
     |> parse()
     |> plots()
-    |> Enum.map(&calc_score/1)
+    |> Enum.map(fn plot -> calc_score(plot, fun) end)
     |> Enum.sum()
   end
 
-  def second(input) do
-    input
-    |> parse()
-    |> plots()
-    |> Enum.map(&calc_score2/1)
-    |> Enum.sum()
-  end
-
-  defp calc_score(set) do
+  defp calc_score(set, fun) do
     list = MapSet.to_list(set)
     area = length(list)
 
-    perimeter =
+    factor =
       list
-      |> Enum.map(&adjacent/1)
-      |> Enum.map(fn adjacent -> 4 - Enum.count(adjacent, &MapSet.member?(set, &1)) end)
+      |> Enum.map(&fun.(&1, set))
       |> Enum.sum()
 
-    area * perimeter
+    area * factor
   end
 
-  defp calc_score2(set) do
-    list = MapSet.to_list(set)
-    area = length(list)
-
-    perimeter =
-      list
-      |> Enum.map(&edges(&1, set))
-      |> Enum.sum()
-
-    area * perimeter
-  end
+  defp perimeter(pos, set), do: 4 - length(adjacent(pos, set))
 
   defp edges(pos, set) do
-    adjacent_left = adjacent?(set, pos, :left)
-    adjacent_right = adjacent?(set, pos, :right)
-    adjacent_up = adjacent?(set, pos, :up)
-    adjacent_down = adjacent?(set, pos, :down)
-    adjacent_nw = adjacent?(set, pos, :nw)
-    adjacent_sw = adjacent?(set, pos, :sw)
-    adjacent_ne = adjacent?(set, pos, :ne)
-    adjacent_se = adjacent?(set, pos, :se)
-    direct_adj_len = Enum.count([adjacent_left, adjacent_right, adjacent_up, adjacent_down], &(&1))
+    adjacent = adjacent(pos, set)
 
-    case direct_adj_len do
+    case length(adjacent) do
       0 ->
         4
       1 ->
         2
-      2 when adjacent_left and adjacent_right or adjacent_up == adjacent_down ->
-        0
-      2 when adjacent_right and adjacent_down and adjacent_se ->
-        1
-      2 when adjacent_right and adjacent_up and adjacent_ne ->
-        1
-      2 when adjacent_left and adjacent_down and adjacent_sw ->
-        1
-      2 when adjacent_left and adjacent_up and adjacent_nw ->
-        1
       2 ->
-        2
-      3 when adjacent_up and adjacent_down and adjacent_right ->
-        2 - Enum.count([adjacent_se, adjacent_ne], &(&1))
-      3 when adjacent_up and adjacent_down and adjacent_left ->
-        2 - Enum.count([adjacent_sw, adjacent_nw], &(&1))
-      3 when adjacent_left and adjacent_right and adjacent_up ->
-        2 - Enum.count([adjacent_nw, adjacent_ne], &(&1))
-      3 when adjacent_left and adjacent_right and adjacent_down ->
-        2 - Enum.count([adjacent_sw, adjacent_se], &(&1))
+        [{x1, y1}, {x2, y2}] = adjacent
+
+        if x1 == x2 or y1 == y2 do
+          0
+        else
+          2 - inner_edges_count(pos, set)
+        end
+      3 ->
+        2 - inner_edges_count(pos, set)
       _ ->
-        4 - Enum.count([adjacent_sw, adjacent_se, adjacent_nw, adjacent_ne], &(&1))
+        4 - inner_edges_count(pos, set)
     end
   end
 
-  defp adjacent({x, y}, :nw), do: {x - 1, y - 1}
-  defp adjacent({x, y}, :sw), do: {x - 1, y + 1}
-  defp adjacent({x, y}, :ne), do: {x + 1, y - 1}
-  defp adjacent({x, y}, :se), do: {x + 1, y + 1}
-  defp adjacent({x, y}, :up), do: {x, y - 1}
-  defp adjacent({x, y}, :down), do: {x, y + 1}
-  defp adjacent({x, y}, :left), do: {x - 1, y}
-  defp adjacent({x, y}, :right), do: {x + 1, y}
+  defp inner_edges_count(pos, set) do
+    pos
+    |> adjacent(set)
+    |> Enum.flat_map(&adjacent(&1, set))
+    |> Enum.reject(&(&1 == pos))
+    |> Enum.frequencies()
+    |> Enum.count(&elem(&1, 1) == 2)
+  end
 
-  defp adjacent?(set, pos, dir), do: MapSet.member?(set, adjacent(pos, dir))
-
-  defp adjacent({x, y}), do: [{x + 1, y}, {x - 1, y}, {x, y + 1}, {x, y - 1}]
+  defp adjacent({x, y}, set), do: [{x + 1, y}, {x - 1, y}, {x, y + 1}, {x, y - 1}] |> Enum.filter(&MapSet.member?(set, &1))
 
   defp plots(list) do
     list
