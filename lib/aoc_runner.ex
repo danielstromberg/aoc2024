@@ -3,6 +3,8 @@ defmodule Mix.Tasks.Aoc2024.Solve do
 
   @impl Mix.Task
   def run(args) do
+    {:ok, _} = Application.ensure_all_started(:memoize)
+
     use_sample_input = Enum.member?(args, "--test")
     day = get_day(args)
     input = InputReader.read(day, use_sample_input)
